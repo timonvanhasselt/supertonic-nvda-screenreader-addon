@@ -76,7 +76,7 @@ class _SynthQueueThread(threading.Thread):
                         if self.cancel_event.is_set():
                             break
                         
-                        # Convert the internal quality value to an integer (1-5)
+                        # Convert the internal quality value to an integer (1-15)
                         steps_value = int(self.driver._quality)
                         
                         # Use the internal _infer method for direct control per chunk
@@ -90,8 +90,8 @@ class _SynthQueueThread(threading.Thread):
                         )
                         
                         if not self.cancel_event.is_set() and wav is not None:
-                            # Volume processing (Base gain factor 3.0)
-                            volume_factor = (self.driver._volume / 100.0) * 3.0
+                            # Volume processing (Updated gain factor to 2.0)
+                            volume_factor = (self.driver._volume / 100.0) * 2.0
                             wav_amplified = wav * volume_factor
                             
                             # Clip to prevent distortion
@@ -126,10 +126,10 @@ class SynthDriver(BaseSynthDriver):
     def check(cls):
         return True
 
-    # Available voices
+    # Available voices with names mapped to IDs
     _available_voices = OrderedDict([
-        ("F1", "Female 1"), ("F2", "Female 2"), ("F3", "Female 3"), ("F4", "Female 4"), ("F5", "Female 5"),
-        ("M1", "Male 1"), ("M2", "Male 2"), ("M3", "Male 3"), ("M4", "Male 4"), ("M5", "Male 5")
+        ("M1", "Alex"), ("M2", "James"), ("M3", "Robert"), ("M4", "Sam"), ("M5", "Daniel"),
+        ("F1", "Sarah"), ("F2", "Lily"), ("F3", "Jessica"), ("F4", "Olivia"), ("F5", "Emily")
     ])
 
     # Language code translations
@@ -141,14 +141,8 @@ class SynthDriver(BaseSynthDriver):
         ("fr", "French")
     ])
 
-    # Options for the Quality Combobox
-    _quality_options = OrderedDict([
-        ("1", "1"),
-        ("2", "2"),
-        ("3", "3"),
-        ("4", "4"),
-        ("5", "5")
-    ])
+    # Options for the Quality Combobox (1-15)
+    _quality_options = OrderedDict([(str(i), str(i)) for i in range(1, 16)])
 
     supportedCommands = frozenset([IndexCommand, VolumeCommand, BreakCommand])
     supportedNotifications = frozenset([synthIndexReached, synthDoneSpeaking])
@@ -158,14 +152,16 @@ class SynthDriver(BaseSynthDriver):
         BaseSynthDriver.VoiceSetting(),
         BaseSynthDriver.VariantSetting(),
         BaseSynthDriver.VolumeSetting(),
-        synthDriverHandler.DriverSetting("quality", "Quality (Steps 1-5)"),
+        synthDriverHandler.DriverSetting("quality", "Quality (Steps 1-15)"),
     )
 
     def __init__(self):
+        # Default starting voice: Sarah
         self._current_voice_id = "F1"
         self._current_lang = "en"
-        self._volume = 100
-        self._quality = "3" 
+        # Standard values: Volume 50 and Quality 5
+        self._volume = 50
+        self._quality = "5" 
         
         self.tts_engine = None
         self._player = None
